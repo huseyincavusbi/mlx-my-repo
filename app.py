@@ -116,6 +116,7 @@ iface = gr.Interface(
             label="Quantization Method", 
             info="GGML quantisation type",
             value="Q4_K_M",
+            filterable=False
         ),
         gr.Textbox(
             lines=1, 
