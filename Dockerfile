@@ -43,7 +43,7 @@ COPY --chown=1000 . ${HOME}/app
 RUN git clone https://github.com/ggerganov/llama.cpp && \
     cd llama.cpp && \
     make clean && \
-    LLAMA_CUDA=1 make
+    make
 
 RUN pip install -r llama.cpp/requirements.txt
 
