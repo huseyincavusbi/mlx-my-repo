@@ -40,11 +40,7 @@ RUN pyenv install ${PYTHON_VERSION} && \
     pip install "huggingface-hub" "hf-transfer" "gradio"
 
 COPY --chown=1000 . ${HOME}/app
-RUN git clone https://github.com/ggerganov/llama.cpp && \
-    cd llama.cpp && \
-    make clean && \
-    make
-
+RUN git clone https://github.com/ggerganov/llama.cpp
 RUN pip install -r llama.cpp/requirements.txt
 
 ENV PYTHONPATH=${HOME}/app \
@@ -58,4 +54,4 @@ ENV PYTHONPATH=${HOME}/app \
     TQDM_MININTERVAL=1 \
     SYSTEM=spaces
 
-CMD ["python", "app.py"]
+ENTRYPOINT /bin/sh start.sh
