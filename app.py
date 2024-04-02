@@ -128,7 +128,7 @@ iface = gr.Interface(
         gr.Image(show_label=False),
     ],
     title="Create your own GGUF Quants, blazingly fast ⚡!",
-    description="Create GGUF quants from any Hugging Face repository! You need to specify a write token obtained in https://hf.co/settings/tokens.",
+    description="The space takes a HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace. You need to specify a write token obtained in https://hf.co/settings/tokens.",
     article="<p>Find your write token at <a href='https://huggingface.co/settings/tokens' target='_blank'>token settings</a></p>",
     
 )
