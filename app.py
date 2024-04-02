@@ -108,8 +108,6 @@ iface = gr.Interface(
             lines=1, 
             label="Hub Model ID",
             info="Model repo ID",
-            placeholder="TinyLlama/TinyLlama-1.1B-Chat-v1.0",
-            value="TinyLlama/TinyLlama-1.1B-Chat-v1.0"
         ),
         gr.Dropdown(
             ["Q2_K", "Q3_K_S", "Q3_K_M", "Q3_K_L", "Q4_0", "Q4_K_S", "Q4_K_M", "Q5_0", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0"], 
@@ -129,7 +127,7 @@ iface = gr.Interface(
         gr.Markdown(label="output"),
         gr.Image(show_label=False),
     ],
-    title="Create your own GGUF Quants!",
+    title="Create your own GGUF Quants, blazingly fast ⚡!",
     description="Create GGUF quants from any Hugging Face repository! You need to specify a write token obtained in https://hf.co/settings/tokens.",
     article="<p>Find your write token at <a href='https://huggingface.co/settings/tokens' target='_blank'>token settings</a></p>",
     
