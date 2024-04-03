@@ -30,12 +30,13 @@ def process_model(model_id, q_method, hf_token):
     try:
         api = HfApi(token=hf_token)
 
-        snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False)
+        snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False, token=hf_token)
         print("Model downloaded successully!")
         
         conversion_script = script_to_use(model_id, api)
         fp16_conversion = f"python llama.cpp/{conversion_script} {model_name} --outtype f16 --outfile {fp16}"
         result = subprocess.run(fp16_conversion, shell=True, capture_output=True)
+        print(result)
         if result.returncode != 0:
             raise Exception(f"Error converting to fp16: {result.stderr}")
         print("Model converted to fp16 successully!")
@@ -52,25 +53,41 @@ def process_model(model_id, q_method, hf_token):
         new_repo_id = new_repo_url.repo_id
         print("Repo created successfully!", new_repo_url)
 
-        card = ModelCard.load(model_id)
+        try:
+            card = ModelCard.load(model_id,)
+        except:
+            card = ModelCard("")
         card.data.tags = ["llama-cpp"] if card.data.tags is None else card.data.tags + ["llama-cpp"]
         card.text = dedent(
             f"""
             # {new_repo_id}
-            This model was converted to GGUF format from [`{model_id}`](https://huggingface.co/{model_id}) using llama.cpp.
+            This model was converted to GGUF format from [`{model_id}`](https://huggingface.co/{model_id}) using llama.cpp via the GGML.ai's [GGUF-it](https://huggingface.co/spaces/ggml-org/GGUF-it) space.
             Refer to the [original model card](https://huggingface.co/{model_id}) for more details on the model.
             ## Use with llama.cpp
+
+            Install Llama.cpp through brew.
 
             ```bash
             brew install ggerganov/ggerganov/llama.cpp
             ```
+            Invoke the llama.cpp server or the CLI.
 
+            CLI:
+            
             ```bash
             llama-cli --hf-repo {new_repo_id} --model {qtype.split("/")[-1]} -p "The meaning to life and the universe is "
             ```
 
+            Server:
+            
             ```bash
             llama-server --hf-repo {new_repo_id} --model {qtype.split("/")[-1]} -c 2048
+            ```
+
+            Note: You can also use this checkpoint directly through the [usage steps](https://github.com/ggerganov/llama.cpp?tab=readme-ov-file#usage) listed in the llama.cpp repo as well.
+
+            ```
+            git clone https://github.com/ggerganov/llama.cpp && cd llama.cpp && make && ./main -m {qtype.split("/")[-1]} -n 128
             ```
             """
         )
@@ -128,7 +145,7 @@ iface = gr.Interface(
         gr.Image(show_label=False),
     ],
     title="Create your own GGUF Quants, blazingly fast ⚡!",
-    description="The space takes a HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace. You need to specify a write token obtained in https://hf.co/settings/tokens.",
+    description="The space takes a HF repo as an input, quantises it and creates anoter repo containing the selected quant under your HF user namespace. You need to specify a write token obtained in https://hf.co/settings/tokens.",
     article="<p>Find your write token at <a href='https://huggingface.co/settings/tokens' target='_blank'>token settings</a></p>",
     
 )
