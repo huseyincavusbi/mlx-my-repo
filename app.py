@@ -23,14 +23,30 @@ def script_to_use(model_id, api):
     arch = arch[0]
     return "convert.py" if arch in LLAMA_LIKE_ARCHS else "convert-hf-to-gguf.py"
 
-def process_model(model_id, q_method, hf_token):
+def process_model(model_id, q_method, hf_token, private_repo):
     model_name = model_id.split('/')[-1]
     fp16 = f"{model_name}/{model_name.lower()}.fp16.bin"
     
     try:
         api = HfApi(token=hf_token)
 
-        snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False, token=hf_token)
+        dl_pattern = ["*.md", "*.json", "*.model"]
+        
+        pattern = (
+            "*.safetensors"
+            if any(
+                file.path.endswith(".safetensors")
+                for file in api.list_repo_tree(
+                    repo_id=model_id,
+                    recursive=True,
+                )
+            )
+            else "*.bin"
+        )
+
+        dl_pattern += pattern
+
+        snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False, token=hf_token, allow_patterns=dl_pattern)
         print("Model downloaded successully!")
         
         conversion_script = script_to_use(model_id, api)
@@ -49,7 +65,7 @@ def process_model(model_id, q_method, hf_token):
         print("Quantised successfully!")
 
         # Create empty repo
-        new_repo_url = api.create_repo(repo_id=f"{model_name}-{q_method}-GGUF", exist_ok=True)
+        new_repo_url = api.create_repo(repo_id=f"{model_name}-{q_method}-GGUF", exist_ok=True, private=private_repo)
         new_repo_id = new_repo_url.repo_id
         print("Repo created successfully!", new_repo_url)
 
@@ -58,6 +74,7 @@ def process_model(model_id, q_method, hf_token):
         except:
             card = ModelCard("")
         card.data.tags = ["llama-cpp"] if card.data.tags is None else card.data.tags + ["llama-cpp"]
+        card.data.tags += ["gguf-my-repo"]
         card.text = dedent(
             f"""
             # {new_repo_id}
@@ -84,7 +101,7 @@ def process_model(model_id, q_method, hf_token):
             llama-server --hf-repo {new_repo_id} --model {qtype.split("/")[-1]} -c 2048
             ```
 
-            Note: You can also use this checkpoint directly through the [usage steps](https://github.com/ggerganov/llama.cpp?tab=readme-ov-file#usage) listed in the llama.cpp repo as well.
+            Note: You can also use this checkpoint directly through the [usage steps](https://github.com/ggerganov/llama.cpp?tab=readme-ov-file#usage) listed in the Llama.cpp repo as well.
 
             ```
             git clone https://github.com/ggerganov/llama.cpp && cd llama.cpp && make && ./main -m {qtype.split("/")[-1]} -n 128
@@ -138,6 +155,11 @@ iface = gr.Interface(
             label="HF Write Token",
             info="https://hf.co/settings/token",
             type="password",
+        ),
+        gr.Checkbox(
+            value=False,
+            label="Private Repo",
+            info="Create a private repo under your username."
         )
     ], 
     outputs=[
@@ -145,7 +167,7 @@ iface = gr.Interface(
         gr.Image(show_label=False),
     ],
     title="Create your own GGUF Quants, blazingly fast ⚡!",
-    description="The space takes a HF repo as an input, quantises it and creates anoter repo containing the selected quant under your HF user namespace. You need to specify a write token obtained in https://hf.co/settings/tokens.",
+    description="The space takes an HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace. You need to specify a write token obtained in https://hf.co/settings/tokens.",
     article="<p>Find your write token at <a href='https://huggingface.co/settings/tokens' target='_blank'>token settings</a></p>",
     
 )
