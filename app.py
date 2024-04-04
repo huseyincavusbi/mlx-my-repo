@@ -78,11 +78,11 @@ def process_model(model_id, q_method, hf_token, private_repo):
         card.text = dedent(
             f"""
             # {new_repo_id}
-            This model was converted to GGUF format from [`{model_id}`](https://huggingface.co/{model_id}) using llama.cpp via the GGML.ai's [GGUF-it](https://huggingface.co/spaces/ggml-org/GGUF-it) space.
+            This model was converted to GGUF format from [`{model_id}`](https://huggingface.co/{model_id}) using llama.cpp via the ggml.ai's [GGUF-my-repo](https://huggingface.co/spaces/ggml-org/gguf-my-repo) space.
             Refer to the [original model card](https://huggingface.co/{model_id}) for more details on the model.
             ## Use with llama.cpp
 
-            Install Llama.cpp through brew.
+            Install llama.cpp through brew.
 
             ```bash
             brew install ggerganov/ggerganov/llama.cpp
@@ -104,7 +104,10 @@ def process_model(model_id, q_method, hf_token, private_repo):
             Note: You can also use this checkpoint directly through the [usage steps](https://github.com/ggerganov/llama.cpp?tab=readme-ov-file#usage) listed in the Llama.cpp repo as well.
 
             ```
-            git clone https://github.com/ggerganov/llama.cpp && cd llama.cpp && make && ./main -m {qtype.split("/")[-1]} -n 128
+            git clone https://github.com/ggerganov/llama.cpp && \
+            cd llama.cpp && \
+            make && \
+            ./main -m {qtype.split("/")[-1]} -n 128
             ```
             """
         )
