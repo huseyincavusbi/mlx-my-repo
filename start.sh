@@ -1,4 +1,4 @@
 cd llama.cpp
-make quantize
+make -j quantize
 cd ..
 python app.py

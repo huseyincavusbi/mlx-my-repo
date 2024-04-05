@@ -26,12 +26,12 @@ def script_to_use(model_id, api):
 def process_model(model_id, q_method, hf_token, private_repo):
     model_name = model_id.split('/')[-1]
     fp16 = f"{model_name}/{model_name.lower()}.fp16.bin"
-    
+
     try:
         api = HfApi(token=hf_token)
 
         dl_pattern = ["*.md", "*.json", "*.model"]
-        
+
         pattern = (
             "*.safetensors"
             if any(
@@ -48,7 +48,7 @@ def process_model(model_id, q_method, hf_token, private_repo):
 
         snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False, token=hf_token, allow_patterns=dl_pattern)
         print("Model downloaded successully!")
-        
+
         conversion_script = script_to_use(model_id, api)
         fp16_conversion = f"python llama.cpp/{conversion_script} {model_name} --outtype f16 --outfile {fp16}"
         result = subprocess.run(fp16_conversion, shell=True, capture_output=True)
@@ -90,13 +90,13 @@ def process_model(model_id, q_method, hf_token, private_repo):
             Invoke the llama.cpp server or the CLI.
 
             CLI:
-            
+
             ```bash
-            llama-cli --hf-repo {new_repo_id} --model {qtype.split("/")[-1]} -p "The meaning to life and the universe is "
+            llama-cli --hf-repo {new_repo_id} --model {qtype.split("/")[-1]} -p "The meaning to life and the universe is"
             ```
 
             Server:
-            
+
             ```bash
             llama-server --hf-repo {new_repo_id} --model {qtype.split("/")[-1]} -c 2048
             ```
@@ -139,22 +139,22 @@ def process_model(model_id, q_method, hf_token, private_repo):
 
 # Create Gradio interface
 iface = gr.Interface(
-    fn=process_model, 
+    fn=process_model,
     inputs=[
         gr.Textbox(
-            lines=1, 
+            lines=1,
             label="Hub Model ID",
             info="Model repo ID",
         ),
         gr.Dropdown(
-            ["Q2_K", "Q3_K_S", "Q3_K_M", "Q3_K_L", "Q4_0", "Q4_K_S", "Q4_K_M", "Q5_0", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0"], 
-            label="Quantization Method", 
+            ["Q2_K", "Q3_K_S", "Q3_K_M", "Q3_K_L", "Q4_0", "Q4_K_S", "Q4_K_M", "Q5_0", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0"],
+            label="Quantization Method",
             info="GGML quantisation type",
             value="Q4_K_M",
             filterable=False
         ),
         gr.Textbox(
-            lines=1, 
+            lines=1,
             label="HF Write Token",
             info="https://hf.co/settings/token",
             type="password",
@@ -164,7 +164,7 @@ iface = gr.Interface(
             label="Private Repo",
             info="Create a private repo under your username."
         )
-    ], 
+    ],
     outputs=[
         gr.Markdown(label="output"),
         gr.Image(show_label=False),
@@ -172,7 +172,6 @@ iface = gr.Interface(
     title="Create your own GGUF Quants, blazingly fast ⚡!",
     description="The space takes an HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace. You need to specify a write token obtained in https://hf.co/settings/tokens.",
     article="<p>Find your write token at <a href='https://huggingface.co/settings/tokens' target='_blank'>token settings</a></p>",
-    
 )
 
 # Launch the interface
