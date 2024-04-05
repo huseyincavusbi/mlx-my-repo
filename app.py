@@ -144,7 +144,7 @@ iface = gr.Interface(
         gr.Textbox(
             lines=1,
             label="Hub Model ID",
-            info="Model repo ID",
+            info="Repo/model",
         ),
         gr.Dropdown(
             ["Q2_K", "Q3_K_S", "Q3_K_M", "Q3_K_L", "Q4_0", "Q4_K_S", "Q4_K_M", "Q5_0", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0"],
