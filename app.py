@@ -175,4 +175,4 @@ iface = gr.Interface(
 )
 
 # Launch the interface
-iface.launch(debug=True)
+iface.queue(default_concurrency_limit=1, max_size=5).launch(debug=True)
