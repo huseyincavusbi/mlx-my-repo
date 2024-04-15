@@ -9,6 +9,8 @@ from huggingface_hub import snapshot_download
 from huggingface_hub import whoami
 from huggingface_hub import ModelCard
 
+from gradio_huggingfacehub_search import HuggingfaceHubSearch
+
 from textwrap import dedent
 
 LLAMA_LIKE_ARCHS = ["MistralForCausalLM", "LlamaForCausalLM"]
@@ -141,10 +143,10 @@ def process_model(model_id, q_method, hf_token, private_repo):
 iface = gr.Interface(
     fn=process_model,
     inputs=[
-        gr.Textbox(
-            lines=1,
+        HuggingfaceHubSearch(
             label="Hub Model ID",
-            info="Repo/model",
+            placeholder="Search for model id on Huggingface",
+            search_type="model",
         ),
         gr.Dropdown(
             ["Q2_K", "Q3_K_S", "Q3_K_M", "Q3_K_L", "Q4_0", "Q4_K_S", "Q4_K_M", "Q5_0", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0"],
