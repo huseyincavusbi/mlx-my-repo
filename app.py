@@ -13,7 +13,7 @@ from gradio_huggingfacehub_search import HuggingfaceHubSearch
 
 from textwrap import dedent
 
-LLAMA_LIKE_ARCHS = ["MistralForCausalLM", "LlamaForCausalLM"]
+LLAMA_LIKE_ARCHS = ["MistralForCausalLM",]
 
 def script_to_use(model_id, api):
     info = api.model_info(model_id)
