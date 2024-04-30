@@ -25,12 +25,14 @@ def script_to_use(model_id, api):
     arch = arch[0]
     return "convert.py" if arch in LLAMA_LIKE_ARCHS else "convert-hf-to-gguf.py"
 
-def process_model(model_id, q_method, hf_token, private_repo):
+def process_model(model_id, q_method, private_repo, oauth_token: gr.OAuthToken | None):
+    if token is None:
+        raise ValueError("You must be logged in to use GGUF-my-repo")
     model_name = model_id.split('/')[-1]
     fp16 = f"{model_name}/{model_name.lower()}.fp16.bin"
 
     try:
-        api = HfApi(token=hf_token)
+        api = HfApi(token=oauth_token.token)
 
         dl_pattern = ["*.md", "*.json", "*.model"]
 
@@ -48,7 +50,7 @@ def process_model(model_id, q_method, hf_token, private_repo):
 
         dl_pattern += pattern
 
-        snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False, token=hf_token, allow_patterns=dl_pattern)
+        api.snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False, allow_patterns=dl_pattern)
         print("Model downloaded successully!")
 
         conversion_script = script_to_use(model_id, api)
@@ -72,11 +74,13 @@ def process_model(model_id, q_method, hf_token, private_repo):
         print("Repo created successfully!", new_repo_url)
 
         try:
-            card = ModelCard.load(model_id,)
+            card = ModelCard.load(model_id, token=oauth_token.token)
         except:
             card = ModelCard("")
-        card.data.tags = ["llama-cpp"] if card.data.tags is None else card.data.tags + ["llama-cpp"]
-        card.data.tags += ["gguf-my-repo"]
+        if card.data.tags is None:
+            card.data.tags = []
+        card.data.tags.append("llama-cpp")
+        card.data.tags.append("gguf-my-repo")
         card.text = dedent(
             f"""
             # {new_repo_id}
@@ -155,25 +159,19 @@ iface = gr.Interface(
             value="Q4_K_M",
             filterable=False
         ),
-        gr.Textbox(
-            lines=1,
-            label="HF Write Token",
-            info="https://hf.co/settings/token",
-            type="password",
-        ),
         gr.Checkbox(
             value=False,
             label="Private Repo",
             info="Create a private repo under your username."
-        )
+        ),
+        gr.LoginButton(min_width=250),
     ],
     outputs=[
         gr.Markdown(label="output"),
         gr.Image(show_label=False),
     ],
     title="Create your own GGUF Quants, blazingly fast ⚡!",
-    description="The space takes an HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace. You need to specify a write token obtained in https://hf.co/settings/tokens.",
-    article="<p>Find your write token at <a href='https://huggingface.co/settings/tokens' target='_blank'>token settings</a></p>",
+    description="The space takes an HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace.",
 )
 
 # Launch the interface
