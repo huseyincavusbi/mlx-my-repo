@@ -173,7 +173,7 @@ iface = gr.Interface(
     description="The space takes an HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace.",
 )
 with gr.Blocks() as demo:
-    gr.markdown("You must be logged in to use GGUF-my-repo.")
+    gr.Markdown("You must be logged in to use GGUF-my-repo.")
     gr.LoginButton(min_width=250)
     iface.render()
 
