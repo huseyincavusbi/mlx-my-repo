@@ -26,7 +26,7 @@ def script_to_use(model_id, api):
     return "convert.py" if arch in LLAMA_LIKE_ARCHS else "convert-hf-to-gguf.py"
 
 def process_model(model_id, q_method, private_repo, oauth_token: gr.OAuthToken | None):
-    if token is None:
+    if oauth_token.token is None:
         raise ValueError("You must be logged in to use GGUF-my-repo")
     model_name = model_id.split('/')[-1]
     fp16 = f"{model_name}/{model_name.lower()}.fp16.bin"
