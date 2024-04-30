@@ -164,7 +164,6 @@ iface = gr.Interface(
             label="Private Repo",
             info="Create a private repo under your username."
         ),
-        gr.LoginButton(min_width=250),
     ],
     outputs=[
         gr.Markdown(label="output"),
@@ -173,6 +172,10 @@ iface = gr.Interface(
     title="Create your own GGUF Quants, blazingly fast ⚡!",
     description="The space takes an HF repo as an input, quantises it and creates a Public repo containing the selected quant under your HF user namespace.",
 )
+with gr.Blocks() as demo:
+    gr.markdown("You must be logged in to use GGUF-my-repo.")
+    gr.LoginButton(min_width=250)
+    iface.render()
 
 # Launch the interface
-iface.queue(default_concurrency_limit=1, max_size=5).launch(debug=True)
+demo.queue(default_concurrency_limit=1, max_size=5).launch(debug=True)
