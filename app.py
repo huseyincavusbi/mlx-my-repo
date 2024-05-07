@@ -181,10 +181,10 @@ with gr.Blocks() as demo:
     iface.render()
 
 def restart_space():
-    HfApi().restart_space(repo_id="ggml-org/gguf-my-repo", token=HF_TOKEN)
+    HfApi().restart_space(repo_id="ggml-org/gguf-my-repo", token=HF_TOKEN, factory_reboot=True)
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(restart_space, "interval", seconds=86400)
+scheduler.add_job(restart_space, "interval", seconds=21600)
 scheduler.start()
 
 # Launch the interface
