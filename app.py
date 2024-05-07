@@ -11,9 +11,12 @@ from huggingface_hub import ModelCard
 
 from gradio_huggingfacehub_search import HuggingfaceHubSearch
 
+from apscheduler.schedulers.background import BackgroundScheduler
+
 from textwrap import dedent
 
 LLAMA_LIKE_ARCHS = ["MistralForCausalLM",]
+HF_TOKEN = os.environ.get("HF_TOKEN")
 
 def script_to_use(model_id, api):
     info = api.model_info(model_id)
@@ -176,6 +179,13 @@ with gr.Blocks() as demo:
     gr.Markdown("You must be logged in to use GGUF-my-repo.")
     gr.LoginButton(min_width=250)
     iface.render()
+
+def restart_space():
+    HfApi().restart_space(repo_id="ggml-org/gguf-my-repo", token=HF_TOKEN)
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(restart_space, "interval", seconds=86400)
+scheduler.start()
 
 # Launch the interface
 demo.queue(default_concurrency_limit=1, max_size=5).launch(debug=True)
