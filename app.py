@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-
+os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 import gradio as gr
 
 from huggingface_hub import create_repo, HfApi
