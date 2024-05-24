@@ -1,4 +1,4 @@
 cd llama.cpp
-make -j quantize
+make -j quantize gguf-split
 cd ..
 python app.py
