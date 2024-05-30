@@ -15,18 +15,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from textwrap import dedent
 
-LLAMA_LIKE_ARCHS = ["MistralForCausalLM",]
 HF_TOKEN = os.environ.get("HF_TOKEN")
-
-def script_to_use(model_id, api):
-    info = api.model_info(model_id)
-    if info.config is None:
-        return None
-    arch = info.config.get("architectures", None)
-    if arch is None:
-        return None
-    arch = arch[0]
-    return "convert.py" if arch in LLAMA_LIKE_ARCHS else "convert-hf-to-gguf.py"
 
 def split_upload_model(model_path, repo_id, oauth_token: gr.OAuthToken | None, split_max_tensors=256, split_max_size=None):
     if oauth_token.token is None:
@@ -98,7 +87,7 @@ def process_model(model_id, q_method, private_repo, split_model, split_max_tenso
         print(f"Current working directory: {os.getcwd()}")
         print(f"Model directory contents: {os.listdir(model_name)}")
 
-        conversion_script = script_to_use(model_id, api)
+        conversion_script = "convert-hf-to-gguf.py"
         fp16_conversion = f"python llama.cpp/{conversion_script} {model_name} --outtype f16 --outfile {fp16}"
         result = subprocess.run(fp16_conversion, shell=True, capture_output=True)
         print(result)
