@@ -119,9 +119,7 @@ def process_model(model_id, q_method, private_repo, split_model, split_max_tenso
             card.data.tags = []
         card.data.tags.append("llama-cpp")
         card.data.tags.append("gguf-my-repo")
-        if card.data.base_model is None:
-            card.data.base_model = []
-        card.data.base_model.append({model_id})
+        card.data.base_model = {model_id}
         card.text = dedent(
             f"""
             # {new_repo_id}
