@@ -260,6 +260,7 @@ with gr.Blocks() as demo:
         ],
         title="Create your own GGUF Quants, blazingly fast ⚡!",
         description="The space takes an HF repo as an input, quantizes it and creates a Public repo containing the selected quant under your HF user namespace.",
+        api_name=False
     )
 
     def update_visibility(split_model):
@@ -279,4 +280,4 @@ scheduler.add_job(restart_space, "interval", seconds=21600)
 scheduler.start()
 
 # Launch the interface
-demo.queue(default_concurrency_limit=1, max_size=5).launch(debug=True)
+demo.queue(default_concurrency_limit=1, max_size=5).launch(debug=True, show_api=False)
