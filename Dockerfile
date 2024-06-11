@@ -44,7 +44,7 @@ COPY --chown=1000 . ${HOME}/app
 RUN git clone https://github.com/ggerganov/llama.cpp
 RUN pip install -r llama.cpp/requirements.txt
 
-COPY imatrix_calibration.txt ${HOME}/app/llama.cpp/
+COPY groups_merged.txt ${HOME}/app/llama.cpp/
 
 ENV PYTHONPATH=${HOME}/app \
     PYTHONUNBUFFERED=1 \
