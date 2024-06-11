@@ -263,7 +263,7 @@ def process_model(model_id, q_method, use_imatrix, imatrix_q_method, private_rep
 
 
 # Create Gradio interface
-with gr.Blocks(css=".gradio-container {max-height: 600px; overflow-y: auto;}") as demo: 
+with gr.Blocks() as demo: 
     gr.Markdown("You must be logged in to use GGUF-my-repo.")
     gr.LoginButton(min_width=250)
 
