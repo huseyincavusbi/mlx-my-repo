@@ -1,5 +1,5 @@
 cd llama.cpp
-make -j quantize gguf-split imatrix
+LLAMA_CUDA=1 make -j quantize gguf-split imatrix
 
 cd ..
 python app.py
