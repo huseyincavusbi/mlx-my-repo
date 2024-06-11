@@ -1,4 +1,5 @@
-FROM python:3.9
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -21,8 +22,8 @@ RUN apt-get update && \
     libxmlsec1-dev \
     libffi-dev \
     liblzma-dev \
-    # gradio dependencies \
-    ffmpeg
+    ffmpeg \
+    nvidia-driver-515
 
 RUN useradd -m -u 1000 user
 USER user
@@ -43,6 +44,8 @@ COPY --chown=1000 . ${HOME}/app
 RUN git clone https://github.com/ggerganov/llama.cpp
 RUN pip install -r llama.cpp/requirements.txt
 
+COPY imatrix_calibration.txt ${HOME}/app/llama.cpp/
+
 ENV PYTHONPATH=${HOME}/app \
     PYTHONUNBUFFERED=1 \
     HF_HUB_ENABLE_HF_TRANSFER=1 \
@@ -52,6 +55,10 @@ ENV PYTHONPATH=${HOME}/app \
     GRADIO_THEME=huggingface \
     TQDM_POSITION=-1 \
     TQDM_MININTERVAL=1 \
-    SYSTEM=spaces
+    SYSTEM=spaces \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH} \
+    PATH=/usr/local/nvidia/bin:${PATH}
+
 
 ENTRYPOINT /bin/sh start.sh
+

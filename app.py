@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import signal
 os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 import gradio as gr
 
@@ -16,6 +17,35 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from textwrap import dedent
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
+
+def generate_importance_matrix(model_path, train_data_path):
+    imatrix_command = f"./imatrix -m ../{model_path} -f {train_data_path} -ngl 99 --output-frequency 10"
+
+    os.chdir("llama.cpp")
+
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Files in the current directory: {os.listdir('.')}")
+
+    if not os.path.isfile(f"../{model_path}"):
+        raise Exception(f"Model file not found: {model_path}")
+
+    print("Running imatrix command...")
+    process = subprocess.Popen(imatrix_command, shell=True)
+
+    try:
+        process.wait(timeout=60)  # added wait
+    except subprocess.TimeoutExpired:
+        print("Imatrix computation timed out. Sending SIGINT to allow graceful termination...")
+        process.send_signal(signal.SIGINT)
+        try:
+            process.wait(timeout=5)  # grace period
+        except subprocess.TimeoutExpired:
+            print("Imatrix proc still didn't term. Forecfully terming process...")
+            process.kill()
+
+    os.chdir("..")
+
+    print("Importance matrix generation completed.")
 
 def split_upload_model(model_path, repo_id, oauth_token: gr.OAuthToken | None, split_max_tensors=256, split_max_size=None):
     if oauth_token.token is None:
@@ -57,7 +87,7 @@ def split_upload_model(model_path, repo_id, oauth_token: gr.OAuthToken | None, s
     
     print("Sharded model has been uploaded successfully!")
 
-def process_model(model_id, q_method, private_repo, split_model, split_max_tensors, split_max_size, oauth_token: gr.OAuthToken | None):
+def process_model(model_id, q_method, use_imatrix, imatrix_q_method, private_repo, train_data_file, split_model, split_max_tensors, split_max_size, oauth_token: gr.OAuthToken | None):
     if oauth_token.token is None:
         raise ValueError("You must be logged in to use GGUF-my-repo")
     model_name = model_id.split('/')[-1]
@@ -96,18 +126,37 @@ def process_model(model_id, q_method, private_repo, split_model, split_max_tenso
         print("Model converted to fp16 successfully!")
         print(f"Converted model path: {fp16}")
 
+        imatrix_path = "llama.cpp/imatrix.dat"
+
+        if use_imatrix:
+            if train_data_file:
+                train_data_path = train_data_file.name
+            else:
+                train_data_path = "groups_merged.txt" #fallback calibration dataset
+
+            print(f"Training data file path: {train_data_path}")
+
+            if not os.path.isfile(train_data_path):
+                raise Exception(f"Training data file not found: {train_data_path}")
+
+            generate_importance_matrix(fp16, train_data_path)
+        else:
+            print("Not using imatrix quantization.")
         username = whoami(oauth_token.token)["name"]
-        quantized_gguf_name = f"{model_name.lower()}-{q_method.lower()}.gguf"
+        quantized_gguf_name = f"{model_name.lower()}-{imatrix_q_method.lower()}-imat.gguf" if use_imatrix else f"{model_name.lower()}-{q_method.lower()}.gguf"
         quantized_gguf_path = quantized_gguf_name
-        quantise_ggml = f"./llama.cpp/quantize {fp16} {quantized_gguf_path} {q_method}"
+        if use_imatrix:
+            quantise_ggml = f"./llama.cpp/quantize --imatrix {imatrix_path} {fp16} {quantized_gguf_path} {imatrix_q_method}"
+        else:
+            quantise_ggml = f"./llama.cpp/quantize {fp16} {quantized_gguf_path} {q_method}"
         result = subprocess.run(quantise_ggml, shell=True, capture_output=True)
         if result.returncode != 0:
             raise Exception(f"Error quantizing: {result.stderr}")
-        print(f"Quantized successfully with {q_method} option!")
+        print(f"Quantized successfully with {imatrix_q_method if use_imatrix else q_method} option!")
         print(f"Quantized model path: {quantized_gguf_path}")
 
         # Create empty repo
-        new_repo_url = api.create_repo(repo_id=f"{username}/{model_name}-{q_method}-GGUF", exist_ok=True, private=private_repo)
+        new_repo_url = api.create_repo(repo_id=f"{username}/{model_name}-{imatrix_q_method if use_imatrix else q_method}-GGUF", exist_ok=True, private=private_repo)
         new_repo_id = new_repo_url.repo_id
         print("Repo created successfully!", new_repo_url)
 
@@ -181,13 +230,26 @@ def process_model(model_id, q_method, private_repo, split_model, split_max_tenso
                 )
             except Exception as e:
                 raise Exception(f"Error uploading quantized model: {e}")
+        
+        
+        imatrix_path = "llama.cpp/imatrix.dat"
+        if os.path.isfile(imatrix_path):
+            try:
+                print(f"Uploading imatrix.dat: {imatrix_path}")
+                api.upload_file(
+                    path_or_fileobj=imatrix_path,
+                    path_in_repo="imatrix.dat",
+                    repo_id=new_repo_id,
+                )
+            except Exception as e:
+                raise Exception(f"Error uploading imatrix.dat: {e}")
 
         api.upload_file(
             path_or_fileobj=f"README.md",
             path_in_repo=f"README.md",
             repo_id=new_repo_id,
         )
-        print(f"Uploaded successfully with {q_method} option!")
+        print(f"Uploaded successfully with {imatrix_q_method if use_imatrix else q_method} option!")
 
         return (
             f'Find your repo <a href=\'{new_repo_url}\' target="_blank" style="text-decoration:underline">here</a>',
@@ -201,58 +263,92 @@ def process_model(model_id, q_method, private_repo, split_model, split_max_tenso
 
 
 # Create Gradio interface
-with gr.Blocks() as demo:
+with gr.Blocks(css=".gradio-container {max-height: 600px; overflow-y: auto;}") as demo: 
     gr.Markdown("You must be logged in to use GGUF-my-repo.")
     gr.LoginButton(min_width=250)
 
-    model_id_input = HuggingfaceHubSearch(
+    model_id = HuggingfaceHubSearch(
         label="Hub Model ID",
         placeholder="Search for model id on Huggingface",
         search_type="model",
     )
 
-    q_method_input = gr.Dropdown(
+    q_method = gr.Dropdown(
         ["Q2_K", "Q3_K_S", "Q3_K_M", "Q3_K_L", "Q4_0", "Q4_K_S", "Q4_K_M", "Q5_0", "Q5_K_S", "Q5_K_M", "Q6_K", "Q8_0"],
         label="Quantization Method",
         info="GGML quantization type",
         value="Q4_K_M",
-        filterable=False
+        filterable=False,
+        visible=True
     )
 
-    private_repo_input = gr.Checkbox(
+    imatrix_q_method = gr.Dropdown(
+        ["IQ3_M", "IQ3_XXS", "Q4_K_M", "Q4_K_S", "IQ4_NL", "IQ4_XS", "Q5_K_M", "Q5_K_S"],
+        label="Imatrix Quantization Method",
+        info="GGML imatrix quants type",
+        value="IQ4_NL", 
+        filterable=False,
+        visible=False
+    )
+
+    use_imatrix = gr.Checkbox(
+        value=False,
+        label="Use Imatrix Quantization",
+        info="Use importance matrix for quantization."
+    )
+
+    private_repo = gr.Checkbox(
         value=False,
         label="Private Repo",
         info="Create a private repo under your username."
     )
 
-    split_model_input = gr.Checkbox(
+    train_data_file = gr.File(
+        label="Training Data File",
+        file_types=["txt"],
+        visible=False
+    )
+
+    split_model = gr.Checkbox(
         value=False,
         label="Split Model",
         info="Shard the model using gguf-split."
     )
 
-    split_max_tensors_input = gr.Number(
+    split_max_tensors = gr.Number(
         value=256,
         label="Max Tensors per File",
         info="Maximum number of tensors per file when splitting model.",
         visible=False
     )
 
-    split_max_size_input = gr.Textbox(
+    split_max_size = gr.Textbox(
         label="Max File Size",
         info="Maximum file size when splitting model (--split-max-size). May leave empty to use the default.",
         visible=False
     )
 
+    def update_visibility(use_imatrix):
+        return gr.update(visible=not use_imatrix), gr.update(visible=use_imatrix), gr.update(visible=use_imatrix)
+    
+    use_imatrix.change(
+        fn=update_visibility,
+        inputs=use_imatrix,
+        outputs=[q_method, imatrix_q_method, train_data_file]
+    )
+
     iface = gr.Interface(
         fn=process_model,
         inputs=[
-            model_id_input,
-            q_method_input,
-            private_repo_input,
-            split_model_input,
-            split_max_tensors_input,
-            split_max_size_input,
+            model_id,
+            q_method,
+            use_imatrix,
+            imatrix_q_method,
+            private_repo,
+            train_data_file,
+            split_model,
+            split_max_tensors,
+            split_max_size,
         ],
         outputs=[
             gr.Markdown(label="output"),
@@ -263,13 +359,13 @@ with gr.Blocks() as demo:
         api_name=False
     )
 
-    def update_visibility(split_model):
+    def update_split_visibility(split_model):
         return gr.update(visible=split_model), gr.update(visible=split_model)
 
-    split_model_input.change(
-        fn=update_visibility,
-        inputs=split_model_input,
-        outputs=[split_max_tensors_input, split_max_size_input]
+    split_model.change(
+        fn=update_split_visibility,
+        inputs=split_model,
+        outputs=[split_max_tensors, split_max_size]
     )
 
 def restart_space():
