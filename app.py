@@ -261,9 +261,11 @@ def process_model(model_id, q_method, use_imatrix, imatrix_q_method, private_rep
         shutil.rmtree(model_name, ignore_errors=True)
         print("Folder cleaned up successfully!")
 
-
+css="""/* Custom CSS to allow scrolling */
+.gradio-container {overflow-y: auto;}
+"""
 # Create Gradio interface
-with gr.Blocks() as demo: 
+with gr.Blocks(css=css) as demo: 
     gr.Markdown("You must be logged in to use GGUF-my-repo.")
     gr.LoginButton(min_width=250)
 
