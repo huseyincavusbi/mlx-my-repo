@@ -51,7 +51,7 @@ def split_upload_model(model_path, repo_id, oauth_token: gr.OAuthToken | None, s
     if oauth_token.token is None:
         raise ValueError("You have to be logged in.")
     
-    split_cmd = f"llama.cpp/gguf-split --split --split-max-tensors {split_max_tensors}"
+    split_cmd = f"llama.cpp/llama-gguf-split --split --split-max-tensors {split_max_tensors}"
     if split_max_size:
         split_cmd += f" --split-max-size {split_max_size}"
     split_cmd += f" {model_path} {model_path.split('.')[0]}"
