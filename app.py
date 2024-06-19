@@ -19,7 +19,7 @@ from textwrap import dedent
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
 def generate_importance_matrix(model_path, train_data_path):
-    imatrix_command = f"./imatrix -m ../{model_path} -f {train_data_path} -ngl 99 --output-frequency 10"
+    imatrix_command = f"./llama-imatrix -m ../{model_path} -f {train_data_path} -ngl 99 --output-frequency 10"
 
     os.chdir("llama.cpp")
 
@@ -146,9 +146,9 @@ def process_model(model_id, q_method, use_imatrix, imatrix_q_method, private_rep
         quantized_gguf_name = f"{model_name.lower()}-{imatrix_q_method.lower()}-imat.gguf" if use_imatrix else f"{model_name.lower()}-{q_method.lower()}.gguf"
         quantized_gguf_path = quantized_gguf_name
         if use_imatrix:
-            quantise_ggml = f"./llama.cpp/quantize --imatrix {imatrix_path} {fp16} {quantized_gguf_path} {imatrix_q_method}"
+            quantise_ggml = f"./llama.cpp/llama-quantize --imatrix {imatrix_path} {fp16} {quantized_gguf_path} {imatrix_q_method}"
         else:
-            quantise_ggml = f"./llama.cpp/quantize {fp16} {quantized_gguf_path} {q_method}"
+            quantise_ggml = f"./llama.cpp/llama-quantize {fp16} {quantized_gguf_path} {q_method}"
         result = subprocess.run(quantise_ggml, shell=True, capture_output=True)
         if result.returncode != 0:
             raise Exception(f"Error quantizing: {result.stderr}")
@@ -186,7 +186,7 @@ def process_model(model_id, q_method, use_imatrix, imatrix_q_method, private_rep
             
             ### CLI:
             ```bash
-            llama --hf-repo {new_repo_id} --hf-file {quantized_gguf_name} -p "The meaning to life and the universe is"
+            llama-cli --hf-repo {new_repo_id} --hf-file {quantized_gguf_name} -p "The meaning to life and the universe is"
             ```
             
             ### Server:
@@ -208,11 +208,11 @@ def process_model(model_id, q_method, use_imatrix, imatrix_q_method, private_rep
 
             Step 3: Run inference through the main binary.
             ```
-            ./main --hf-repo {new_repo_id} --hf-file {quantized_gguf_name} -p "The meaning to life and the universe is"
+            ./llama-cli --hf-repo {new_repo_id} --hf-file {quantized_gguf_name} -p "The meaning to life and the universe is"
             ```
             or 
             ```
-            ./server --hf-repo {new_repo_id} --hf-file {quantized_gguf_name} -c 2048
+            ./llama-server --hf-repo {new_repo_id} --hf-file {quantized_gguf_name} -c 2048
             ```
             """
         )
