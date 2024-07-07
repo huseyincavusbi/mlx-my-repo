@@ -117,7 +117,7 @@ def process_model(model_id, q_method, use_imatrix, imatrix_q_method, private_rep
         print(f"Current working directory: {os.getcwd()}")
         print(f"Model directory contents: {os.listdir(model_name)}")
 
-        conversion_script = "convert-hf-to-gguf.py"
+        conversion_script = "convert_hf_to_gguf.py"
         fp16_conversion = f"python llama.cpp/{conversion_script} {model_name} --outtype f16 --outfile {fp16}"
         result = subprocess.run(fp16_conversion, shell=True, capture_output=True)
         print(result)
