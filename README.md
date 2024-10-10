@@ -1,9 +1,9 @@
 ---
-title: GGUF My Repo
-emoji: 🦙
+title: MLX My Repo
+emoji: 🐐
 colorFrom: gray
-colorTo: pink
-sdk: docker
+colorTo: green
+sdk: gradio
 hf_oauth: true
 hf_oauth_scopes:
   - read-repos
