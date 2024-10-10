@@ -4,6 +4,7 @@ emoji: 🐐
 colorFrom: gray
 colorTo: green
 sdk: gradio
+sdk_version: 4.44.1
 hf_oauth: true
 hf_oauth_scopes:
   - read-repos
