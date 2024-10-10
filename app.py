@@ -162,7 +162,6 @@ with gr.Blocks(css=css) as demo:
         description="The space takes an HF repo as an input, quantizes it and creates a Public/ Private repo containing the selected quant under your HF user namespace.",
         api_name=False
     )
-    )
 
 def restart_space():
     HfApi().restart_space(repo_id="reach-vb/mlx-my-repo", token=HF_TOKEN, factory_reboot=True)
