@@ -16,7 +16,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from textwrap import dedent
 
-import mlx_lm import convert
+from mlx_lm import convert
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
