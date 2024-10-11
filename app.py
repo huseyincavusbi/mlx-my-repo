@@ -16,95 +16,19 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from textwrap import dedent
 
+import mlx_lm import convert
+
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-def process_model(model_id, q_method, private_repo, oauth_token: gr.OAuthToken | None):
+def process_model(model_id, q_method,):
     if oauth_token.token is None:
-        raise ValueError("You must be logged in to use mlx-my-repo")
+        raise ValueError("You must be logged in to use GGUF-my-repo")
     model_name = model_id.split('/')[-1]
-
+    username = whoami(oauth_token.token)["name"]
+    
     try:
-        api = HfApi(token=oauth_token.token)
-
-        dl_pattern = ["*.md", "*.json", "*.model"]
-
-        pattern = (
-            "*.safetensors"
-            if any(
-                file.path.endswith(".safetensors")
-                for file in api.list_repo_tree(
-                    repo_id=model_id,
-                    recursive=True,
-                )
-            )
-            else "*.bin"
-        )
-
-        dl_pattern += pattern
-
-        api.snapshot_download(repo_id=model_id, local_dir=model_name, local_dir_use_symlinks=False, allow_patterns=dl_pattern)
-        print("Model downloaded successfully!")
-        print(f"Current working directory: {os.getcwd()}")
-        print(f"Model directory contents: {os.listdir(model_name)}")
-
-        conversion_script = "convert_hf_to_gguf.py"
-        fp16_conversion = f"python llama.cpp/{conversion_script} {model_name} --outtype f16 --outfile {fp16}"
-        result = subprocess.run(fp16_conversion, shell=True, capture_output=True)
-        print(result)
-        if result.returncode != 0:
-            raise Exception(f"Error converting to fp16: {result.stderr}")
-        print("Model converted to fp16 successfully!")
-        print(f"Converted model path: {fp16}")
-
-        username = whoami(oauth_token.token)["name"]
-        quantized_gguf_name = f"{model_name.lower()}-{imatrix_q_method.lower()}-imat.gguf" if use_imatrix else f"{model_name.lower()}-{q_method.lower()}.gguf"
-        quantized_gguf_path = quantized_gguf_name
-
-        quantise_ggml = f"./llama.cpp/llama-quantize {fp16} {quantized_gguf_path} {q_method}"
-        result = subprocess.run(quantise_ggml, shell=True, capture_output=True)
-        if result.returncode != 0:
-            raise Exception(f"Error quantizing: {result.stderr}")
-        print(f"Quantized successfully with {imatrix_q_method if use_imatrix else q_method} option!")
-        print(f"Quantized model path: {quantized_gguf_path}")
-
-        # Create empty repo
-        new_repo_url = api.create_repo(repo_id=f"{username}/{model_name}-{imatrix_q_method if use_imatrix else q_method}-GGUF", exist_ok=True, private=private_repo)
-        new_repo_id = new_repo_url.repo_id
-        print("Repo created successfully!", new_repo_url)
-
-        try:
-            card = ModelCard.load(model_id, token=oauth_token.token)
-        except:
-            card = ModelCard("")
-        if card.data.tags is None:
-            card.data.tags = []
-        card.data.tags.append("llama-cpp")
-        card.data.tags.append("gguf-my-repo")
-        card.data.base_model = model_id
-        card.text = dedent(
-            f"""
-            # {new_repo_id}
-            """
-        )
-        card.save(f"README.md")
-
-        try:
-            print(f"Uploading quantized model: {quantized_gguf_path}")
-            api.upload_file(
-                path_or_fileobj=quantized_gguf_path,
-                path_in_repo=quantized_gguf_name,
-                repo_id=new_repo_id,
-            )
-        except Exception as e:
-            raise Exception(f"Error uploading quantized model: {e}")
-        
-        api.upload_file(
-            path_or_fileobj=f"README.md",
-            path_in_repo=f"README.md",
-            repo_id=new_repo_id,
-        )
-        print(f"Uploaded successfully with {imatrix_q_method if use_imatrix else q_method} option!")
-
+        upload_repo = username + "/" + model_name + "-mlx"
+        convert(model_id, quantize=True, upload_repo=upload_repo)
         return (
             f'Find your repo <a href=\'{new_repo_url}\' target="_blank" style="text-decoration:underline">here</a>',
             "llama.png",
@@ -112,7 +36,7 @@ def process_model(model_id, q_method, private_repo, oauth_token: gr.OAuthToken |
     except Exception as e:
         return (f"Error: {e}", "error.png")
     finally:
-        shutil.rmtree(model_name, ignore_errors=True)
+        shutil.rmtree("mlx_model", ignore_errors=True)
         print("Folder cleaned up successfully!")
 
 css="""/* Custom CSS to allow scrolling */
@@ -139,18 +63,11 @@ with gr.Blocks(css=css) as demo:
     )
 
 
-    private_repo = gr.Checkbox(
-        value=False,
-        label="Private Repo",
-        info="Create a private repo under your username."
-    )
-
     iface = gr.Interface(
         fn=process_model,
         inputs=[
             model_id,
             q_method,
-            private_repo,
         ],
         outputs=[
             gr.Markdown(label="output"),
