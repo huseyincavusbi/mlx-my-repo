@@ -92,7 +92,9 @@ def process_model(model_id, q_method,oauth_token: gr.OAuthToken | None):
         raise ValueError("You must be logged in to use MLX-my-repo")
     
     model_name = model_id.split('/')[-1]
+    print(model_name)
     username = whoami(oauth_token.token)["name"]
+    print(username)
 
     # login(token=oauth_token.token, add_to_git_credential=True)
     
