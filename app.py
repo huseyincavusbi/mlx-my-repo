@@ -20,7 +20,7 @@ from mlx_lm import convert
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-def process_model(model_id, q_method,):
+def process_model(model_id, q_method,oauth_token: gr.OAuthToken | None):
     if oauth_token.token is None:
         raise ValueError("You must be logged in to use GGUF-my-repo")
     model_name = model_id.split('/')[-1]
@@ -61,8 +61,7 @@ with gr.Blocks(css=css) as demo:
         filterable=False,
         visible=True
     )
-
-
+    
     iface = gr.Interface(
         fn=process_model,
         inputs=[
