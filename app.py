@@ -33,7 +33,7 @@ def clear_cache():
         if repo.repo_type == "model":
             to_delete.append([rev.commit_hash for rev in repo.revisions])
 
-    scan.delete_revisions(*to_delete)
+    scan.delete_revisions(to_delete)
 
     print("Cache has been cleared")
 
@@ -75,7 +75,7 @@ def upload_to_hub(path, upload_repo, hf_path, token):
 
     logging.set_verbosity_info()
 
-    api = HfApi()
+    api = HfApi(token=token)
     api.create_repo(repo_id=upload_repo, exist_ok=True)
     api.upload_folder(
         folder_path=path,
