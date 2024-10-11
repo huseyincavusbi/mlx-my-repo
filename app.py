@@ -18,12 +18,10 @@ from textwrap import dedent
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-
 def process_model(model_id, q_method, private_repo, oauth_token: gr.OAuthToken | None):
     if oauth_token.token is None:
-        raise ValueError("You must be logged in to use GGUF-my-repo")
+        raise ValueError("You must be logged in to use mlx-my-repo")
     model_name = model_id.split('/')[-1]
-    fp16 = f"{model_name}.fp16.gguf"
 
     try:
         api = HfApi(token=oauth_token.token)
