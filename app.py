@@ -98,8 +98,11 @@ def process_model(model_id, q_method,oauth_token: gr.OAuthToken | None):
     
     try:
         upload_repo = username + "/" + model_name + "-mlx"
+        print(upload_repo)
         convert(model_id, quantize=True)
+        print("Conversion done")
         upload_to_hub(path="mlx_model", upload_repo=upload_repo, hf_path=repo_id, token=oauth_token.token)
+        print("Upload done")
         return (
             f'Find your repo <a href=\'{new_repo_url}\' target="_blank" style="text-decoration:underline">here</a>',
             "llama.png",
