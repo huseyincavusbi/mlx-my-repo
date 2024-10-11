@@ -9,6 +9,8 @@ from huggingface_hub import create_repo, HfApi
 from huggingface_hub import snapshot_download
 from huggingface_hub import whoami
 from huggingface_hub import ModelCard
+from huggingface_hub import login
+from huggingface_hub import scan_cache_dir
 
 from gradio_huggingfacehub_search import HuggingfaceHubSearch
 
@@ -20,15 +22,31 @@ from mlx_lm import convert
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
+def clear_cache():
+    scan = scan_cache_dir()
+    to_delete = []
+    for repo in scan.repos:
+        if repo.repo_type == "model":
+            to_delete.append([rev.commit_hash for rev in repo.revisions])
+
+    scan.delete_revisions(*to_delete)
+
+    print("Cache has been cleared")
+
 def process_model(model_id, q_method,oauth_token: gr.OAuthToken | None):
+    
     if oauth_token.token is None:
-        raise ValueError("You must be logged in to use GGUF-my-repo")
+        raise ValueError("You must be logged in to use MLX-my-repo")
+    
     model_name = model_id.split('/')[-1]
     username = whoami(oauth_token.token)["name"]
+
+    login(token=oauth_token.token, add_to_git_credential=True)
     
     try:
         upload_repo = username + "/" + model_name + "-mlx"
         convert(model_id, quantize=True, upload_repo=upload_repo)
+        clear_cache()
         return (
             f'Find your repo <a href=\'{new_repo_url}\' target="_blank" style="text-decoration:underline">here</a>',
             "llama.png",
@@ -37,6 +55,7 @@ def process_model(model_id, q_method,oauth_token: gr.OAuthToken | None):
         return (f"Error: {e}", "error.png")
     finally:
         shutil.rmtree("mlx_model", ignore_errors=True)
+        clear_cache()
         print("Folder cleaned up successfully!")
 
 css="""/* Custom CSS to allow scrolling */
