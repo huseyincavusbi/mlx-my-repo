@@ -19,7 +19,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from textwrap import dedent
 
-from mlx_lm import convert, __version__
+import mlx_lm
+from mlx_lm import convert
 
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
 
@@ -45,7 +46,7 @@ def upload_to_hub(path, upload_repo, hf_path, token):
         f"""
         # {upload_repo}
 
-        The Model [{upload_repo}](https://huggingface.co/{upload_repo}) was converted to MLX format from [{hf_path}](https://huggingface.co/{hf_path}) using mlx-lm version **{__version__}**.
+        The Model [{upload_repo}](https://huggingface.co/{upload_repo}) was converted to MLX format from [{hf_path}](https://huggingface.co/{hf_path}) using mlx-lm version **{mlx_lm.__version__}**.
 
         ## Use with mlx
 
