@@ -26,7 +26,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, 
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 
-def clear_cache():
+def clear_hf_cache_space():
     scan = scan_cache_dir()
     to_delete = []
     for repo in scan.repos:
@@ -111,7 +111,7 @@ def process_model(model_id, q_method,oauth_token: gr.OAuthToken | None):
         return (f"Error: {e}", "error.png")
     finally:
         shutil.rmtree("mlx_model", ignore_errors=True)
-        clear_cache()
+        clear_hf_cache_space()
         print("Folder cleaned up successfully!")
 
 css="""/* Custom CSS to allow scrolling */
