@@ -88,7 +88,7 @@ def upload_to_hub(path, upload_repo, hf_path, oauth_token):
     files = list_files_in_folder(path)
     print(files)
     for file in files:
-        file_path = os.path.join('.', file)
+        file_path = os.path.join(path, file)
         print(f"Uploading file: {file_path}")
         api.upload_file(
             path_or_fileobj=file_path,
