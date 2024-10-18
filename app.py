@@ -1,20 +1,17 @@
 import os
-import shutil
-import subprocess
-import signal
+import tempfile
+
+os.environ["HF_HUB_CACHE"] = "cache"
 os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 import gradio as gr
 
-from huggingface_hub import create_repo, HfApi
-from huggingface_hub import snapshot_download
+from huggingface_hub import HfApi
 from huggingface_hub import whoami
 from huggingface_hub import ModelCard
-from huggingface_hub import login
 from huggingface_hub import scan_cache_dir
 from huggingface_hub import logging
 
 from gradio_huggingfacehub_search import HuggingfaceHubSearch
-
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from textwrap import dedent
@@ -22,23 +19,24 @@ from textwrap import dedent
 import mlx_lm
 from mlx_lm import convert
 
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
-
 HF_TOKEN = os.environ.get("HF_TOKEN")
+
+# I'm not sure if we need to add more stuff here
+QUANT_PARAMS = {
+    "Q4": 4,
+    "Q8": 8,
+}
 
 def clear_hf_cache_space():
     scan = scan_cache_dir()
     to_delete = []
     for repo in scan.repos:
         if repo.repo_type == "model":
-            to_delete.append([rev.commit_hash for rev in repo.revisions])
-
-    scan.delete_revisions(to_delete)
-
+            to_delete.extend([rev.commit_hash for rev in repo.revisions])
+    scan.delete_revisions(*to_delete).execute()
     print("Cache has been cleared")
 
 def upload_to_hub(path, upload_repo, hf_path, token):
-    
     card = ModelCard.load(hf_path)
     card.data.tags = ["mlx"] if card.data.tags is None else card.data.tags + ["mlx"]
     card.data.base_model = hf_path
@@ -86,33 +84,29 @@ def upload_to_hub(path, upload_repo, hf_path, token):
     )
     print(f"Upload successful, go to https://huggingface.co/{upload_repo} for details.")    
 
-def process_model(model_id, q_method,oauth_token: gr.OAuthToken | None):
-    
+def process_model(model_id, q_method, oauth_token: gr.OAuthToken | None):
     if oauth_token.token is None:
         raise ValueError("You must be logged in to use MLX-my-repo")
     
     model_name = model_id.split('/')[-1]
-    print(model_name)
     username = whoami(oauth_token.token)["name"]
-    print(username)
-
-    # login(token=oauth_token.token, add_to_git_credential=True)
-    
     try:
-        upload_repo = username + "/" + model_name + "-mlx"
+        upload_repo = f"{username}/{model_name}-{q_method}-mlx"
         print(upload_repo)
-        convert(model_id, quantize=True)
-        print("Conversion done")
-        upload_to_hub(path="mlx_model", upload_repo=upload_repo, hf_path=repo_id, token=oauth_token.token)
-        print("Upload done")
+        with tempfile.TemporaryDirectory(dir="converted") as tmpdir:
+            # The target dir must not exist
+            mlx_path = os.path.join(tmpdir, "mlx")
+            convert(model_id, mlx_path=mlx_path, quantize=True, q_bits=QUANT_PARAMS[q_method])
+            print("Conversion done")
+            upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, token=oauth_token.token)
+            print("Upload done")
         return (
-            f'Find your repo <a href=\'{new_repo_url}\' target="_blank" style="text-decoration:underline">here</a>',
+            f'Find your repo <a href="https://hf.co/{upload_repo}" target="_blank" style="text-decoration:underline">here</a>',
             "llama.png",
         )
     except Exception as e:
         return (f"Error: {e}", "error.png")
     finally:
-        shutil.rmtree("mlx_model", ignore_errors=True)
         clear_hf_cache_space()
         print("Folder cleaned up successfully!")
 
