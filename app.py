@@ -36,8 +36,8 @@ def clear_hf_cache_space():
     scan.delete_revisions(*to_delete).execute()
     print("Cache has been cleared")
 
-def upload_to_hub(path, upload_repo, hf_path, token):
-    card = ModelCard.load(hf_path)
+def upload_to_hub(path, upload_repo, hf_path, oauth_token):
+    card = ModelCard.load(hf_path, token=oauth_token.token)
     card.data.tags = ["mlx"] if card.data.tags is None else card.data.tags + ["mlx"]
     card.data.base_model = hf_path
     card.text = dedent(
@@ -73,7 +73,7 @@ def upload_to_hub(path, upload_repo, hf_path, token):
 
     logging.set_verbosity_info()
 
-    api = HfApi(token=token)
+    api = HfApi(token=oauth_token.token)
     api.create_repo(repo_id=upload_repo, exist_ok=True)
     api.upload_folder(
         folder_path=path,
@@ -81,6 +81,7 @@ def upload_to_hub(path, upload_repo, hf_path, token):
         repo_type="model",
         multi_commits=True,
         multi_commits_verbose=True,
+        token=oauth_token.token
     )
     print(f"Upload successful, go to https://huggingface.co/{upload_repo} for details.")    
 
@@ -98,7 +99,7 @@ def process_model(model_id, q_method, oauth_token: gr.OAuthToken | None):
             mlx_path = os.path.join(tmpdir, "mlx")
             convert(model_id, mlx_path=mlx_path, quantize=True, q_bits=QUANT_PARAMS[q_method])
             print("Conversion done")
-            upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, token=oauth_token.token)
+            upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, token=oauth_token)
             print("Upload done")
         return (
             f'Find your repo <a href="https://hf.co/{upload_repo}" target="_blank" style="text-decoration:underline">here</a>',
