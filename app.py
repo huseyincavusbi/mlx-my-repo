@@ -27,6 +27,15 @@ QUANT_PARAMS = {
     "Q8": 8,
 }
 
+def list_files_in_folder(folder_path):
+    # List all files and directories in the specified folder
+    all_items = os.listdir(folder_path)
+    
+    # Filter out only files
+    files = [item for item in all_items if os.path.isfile(os.path.join(folder_path, item))]
+    
+    return files
+
 def clear_hf_cache_space():
     scan = scan_cache_dir()
     to_delete = []
@@ -75,14 +84,25 @@ def upload_to_hub(path, upload_repo, hf_path, oauth_token):
 
     api = HfApi(token=oauth_token.token)
     api.create_repo(repo_id=upload_repo, exist_ok=True)
-    api.upload_folder(
-        folder_path=path,
-        repo_id=upload_repo,
-        repo_type="model",
-        multi_commits=True,
-        multi_commits_verbose=True,
-        token=oauth_token.token
-    )
+
+    files = list_files_in_folder(path)
+    print(files)
+    for file in files:
+        file_path = os.path.join('.', file)
+        print(f"Uploading file: {file_path}")
+        api.upload_file(
+            path_or_fileobj=file_path,
+            path_in_repo=file,
+            repo_id=repo_id,
+        )    
+    # api.upload_folder(
+    #     folder_path=path,
+    #     repo_id=upload_repo,
+    #     repo_type="model",
+    #     multi_commits=True,
+    #     multi_commits_verbose=True,
+    #     token=oauth_token.token
+    # )
     print(f"Upload successful, go to https://huggingface.co/{upload_repo} for details.")    
 
 def process_model(model_id, q_method, oauth_token: gr.OAuthToken | None):
