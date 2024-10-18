@@ -99,7 +99,7 @@ def process_model(model_id, q_method, oauth_token: gr.OAuthToken | None):
             mlx_path = os.path.join(tmpdir, "mlx")
             convert(model_id, mlx_path=mlx_path, quantize=True, q_bits=QUANT_PARAMS[q_method])
             print("Conversion done")
-            upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, token=oauth_token)
+            upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, oauth_token=oauth_token)
             print("Upload done")
         return (
             f'Find your repo <a href="https://hf.co/{upload_repo}" target="_blank" style="text-decoration:underline">here</a>',
