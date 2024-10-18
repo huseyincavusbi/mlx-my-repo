@@ -94,15 +94,8 @@ def upload_to_hub(path, upload_repo, hf_path, oauth_token):
             path_or_fileobj=file_path,
             path_in_repo=file,
             repo_id=upload_repo,
-        )    
-    # api.upload_folder(
-    #     folder_path=path,
-    #     repo_id=upload_repo,
-    #     repo_type="model",
-    #     multi_commits=True,
-    #     multi_commits_verbose=True,
-    #     token=oauth_token.token
-    # )
+        )
+        
     print(f"Upload successful, go to https://huggingface.co/{upload_repo} for details.")    
 
 def process_model(model_id, q_method, oauth_token: gr.OAuthToken | None):
