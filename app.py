@@ -93,7 +93,7 @@ def upload_to_hub(path, upload_repo, hf_path, oauth_token):
         api.upload_file(
             path_or_fileobj=file_path,
             path_in_repo=file,
-            repo_id=repo_id,
+            repo_id=upload_repo,
         )    
     # api.upload_folder(
     #     folder_path=path,
