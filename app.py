@@ -47,7 +47,7 @@ def clear_hf_cache_space():
 
 def upload_to_hub(path, upload_repo, hf_path, oauth_token):
     card = ModelCard.load(hf_path, token=oauth_token.token)
-    card.data.tags = ["mlx"] if card.data.tags is None else card.data.tags + ["mlx"]
+    card.data.tags = ["mlx"] if card.data.tags is None else card.data.tags + ["mlx", "mlx-my-repo"]
     card.data.base_model = hf_path
     card.text = dedent(
         f"""
