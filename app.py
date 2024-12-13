@@ -23,6 +23,7 @@ HF_TOKEN = os.environ.get("HF_TOKEN")
 
 # I'm not sure if we need to add more stuff here
 QUANT_PARAMS = {
+    "Q2": 2,
     "Q3": 3,
     "Q4": 4,
     "Q6": 6,
@@ -141,7 +142,7 @@ with gr.Blocks(css=css) as demo:
     )
 
     q_method = gr.Dropdown(
-        ["Q3", "Q4", "Q6", "Q8"],
+        ["Q2", "Q3", "Q4", "Q6", "Q8"],
         label="Quantization Method",
         info="MLX quantization type",
         value="Q4",
