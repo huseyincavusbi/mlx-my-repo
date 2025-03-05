@@ -108,12 +108,13 @@ def process_model(model_id, q_method, oauth_token: gr.OAuthToken | None):
     model_name = model_id.split('/')[-1]
     username = whoami(oauth_token.token)["name"]
     try:
-        upload_repo = f"{username}/{model_name}-{q_method}-mlx"
+        q_bits = QUANT_PARAMS[q_method]
+        upload_repo = f"{username}/{model_name}-{q_bits}bit"
         print(upload_repo)
         with tempfile.TemporaryDirectory(dir="converted") as tmpdir:
             # The target dir must not exist
             mlx_path = os.path.join(tmpdir, "mlx")
-            convert(model_id, mlx_path=mlx_path, quantize=True, q_bits=QUANT_PARAMS[q_method])
+            convert(model_id, mlx_path=mlx_path, quantize=True, q_bits=q_bits)
             print("Conversion done")
             upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, oauth_token=oauth_token)
             print("Upload done")
