@@ -108,16 +108,25 @@ def process_model(model_id, q_method, oauth_token: gr.OAuthToken | None):
     model_name = model_id.split('/')[-1]
     username = whoami(oauth_token.token)["name"]
     try:
-        q_bits = QUANT_PARAMS[q_method]
-        upload_repo = f"{username}/{model_name}-{q_bits}bit"
-        print(upload_repo)
-        with tempfile.TemporaryDirectory(dir="converted") as tmpdir:
-            # The target dir must not exist
-            mlx_path = os.path.join(tmpdir, "mlx")
-            convert(model_id, mlx_path=mlx_path, quantize=True, q_bits=q_bits)
-            print("Conversion done")
-            upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, oauth_token=oauth_token)
-            print("Upload done")
+        if q_method == "FP16":
+            upload_repo = f"{username}/{model_name}-mlx-fp16"
+            with tempfile.TemporaryDirectory(dir="converted") as tmpdir:
+                # The target directory must not exist
+                mlx_path = os.path.join(tmpdir, "mlx")
+                convert(model_id, mlx_path=mlx_path, quantize=False, dtype="float16")
+                print("Conversion done")
+                upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, oauth_token=oauth_token)
+                print("Upload done")
+        else:
+            q_bits = QUANT_PARAMS[q_method]
+            upload_repo = f"{username}/{model_name}-mlx-{q_bits}Bit"
+            with tempfile.TemporaryDirectory(dir="converted") as tmpdir:
+                # The target directory must not exist
+                mlx_path = os.path.join(tmpdir, "mlx")
+                convert(model_id, mlx_path=mlx_path, quantize=True, q_bits=q_bits)
+                print("Conversion done")
+                upload_to_hub(path=mlx_path, upload_repo=upload_repo, hf_path=model_id, oauth_token=oauth_token)
+                print("Upload done")
         return (
             f'Find your repo <a href="https://hf.co/{upload_repo}" target="_blank" style="text-decoration:underline">here</a>',
             "llama.png",
@@ -143,9 +152,9 @@ with gr.Blocks(css=css) as demo:
     )
 
     q_method = gr.Dropdown(
-        ["Q2", "Q3", "Q4", "Q6", "Q8"],
-        label="Quantization Method",
-        info="MLX quantization type",
+        ["FP16", "Q2", "Q3", "Q4", "Q6", "Q8"],
+        label="Conversion Method",
+        info="MLX conversion type (FP16 for float16, Q2–Q8 for quantized models)",
         value="Q4",
         filterable=False,
         visible=True
@@ -161,8 +170,8 @@ with gr.Blocks(css=css) as demo:
             gr.Markdown(label="output"),
             gr.Image(show_label=False),
         ],
-        title="Create your own MLX Quants, blazingly fast ⚡!",
-        description="The space takes an HF repo as an input, quantizes it and creates a Public/ Private repo containing the selected quant under your HF user namespace.",
+        title="Create your own MLX Models, blazingly fast ⚡!",
+        description="The space takes an HF repo as an input, converts it to MLX format (FP16 or quantized), and creates a Public/Private repo under your HF user namespace.",
         api_name=False
     )
 
