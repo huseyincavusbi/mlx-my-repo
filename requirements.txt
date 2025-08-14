@@ -3,4 +3,5 @@ hf-transfer
 gradio[oauth]>=4.28.0 
 gradio_huggingfacehub_search==0.0.7 
 APScheduler
+mlx[cpu]
 mlx-lm
