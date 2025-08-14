@@ -176,7 +176,7 @@ with gr.Blocks(css=css) as demo:
     )
 
 def restart_space():
-    HfApi().restart_space(repo_id="reach-vb/mlx-my-repo", token=HF_TOKEN, factory_reboot=True)
+    HfApi().restart_space(repo_id="mlx-community/mlx-my-repo", token=HF_TOKEN, factory_reboot=True)
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(restart_space, "interval", seconds=21600)
