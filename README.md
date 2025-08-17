@@ -14,3 +14,5 @@ pinned: false
 ---
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
+### Local github clone of [mlx-my-repo](https://huggingface.co/spaces/mlx-community/mlx-my-repo)
